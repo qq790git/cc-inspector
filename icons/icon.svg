@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="cocosGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#55C500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3DA000;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7ED321;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#55C500;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 外圈齿轮 -->
+  <path d="M64 8 L71 20 L85 16 L87 30 L101 31 L98 45 L112 51 L104 63 L114 75 L101 82 L105 96 L91 98 L89 112 L75 109 L68 122 L57 112 L43 118 L38 104 L24 103 L30 89 L16 80 L28 70 L18 57 L32 52 L29 38 L43 37 L48 23 L60 28 Z" 
+        fill="url(#cocosGrad)" 
+        stroke="#2D8600" 
+        stroke-width="2"/>
+  
+  <!-- 内圈 -->
+  <circle cx="64" cy="64" r="32" fill="url(#innerGrad)" stroke="#2D8600" stroke-width="2"/>
+  
+  <!-- 中心 C 字母 -->
+  <path d="M76 44 C68 36 54 36 46 44 C38 52 38 76 46 84 C54 92 68 92 76 84" 
+        fill="none" 
+        stroke="#FFFFFF" 
+        stroke-width="8" 
+        stroke-linecap="round"/>
+  
+  <!-- 高光效果 -->
+  <ellipse cx="52" cy="40" rx="12" ry="6" fill="rgba(255,255,255,0.3)"/>
+</svg>

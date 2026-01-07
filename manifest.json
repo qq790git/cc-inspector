@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "CC Inspector",
+  "version": "1.1.0",
+  "description": "Debug Cocos Creator games - display node trees, properties, performance monitoring and texture replacement",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "devtools_page": "devtools/devtools.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content.js"],
+      "run_at": "document_idle",
+      "all_frames": true
+    }
+  ],
+  "background": {
+    "service_worker": "background/background.js"
+  },
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/inject.js",
+        "content/float-panel.js",
+        "content/inject/cc-utils.js",
+        "content/inject/node-tree.js",
+        "content/inject/node-props.js",
+        "content/inject/performance.js",
+        "content/inject/texture-replace.js",
+        "content/inject/node-highlight.js",
+        "content/inject/main.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
