@@ -1,73 +1,73 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { 
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-  font-size: 12px; 
-  background: #1e1e1e; 
-  color: #d4d4d4; 
-  height: 100vh; 
-  display: flex; 
-  flex-direction: column; 
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  background: #0d1117; /* GitHub Dark: canvas.default */
+  color: #c9d1d9; /* GitHub Dark: fg.default */
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.5;
 }
 
 /* 工具栏 */
-.toolbar { 
-  padding: 8px 12px; 
-  background: linear-gradient(180deg, #3c3c3c 0%, #2d2d2d 100%);
-  border-bottom: 1px solid #1a1a1a; 
-  display: flex; 
-  align-items: center; 
-  gap: 12px; 
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+.toolbar {
+  padding: 12px 16px;
+  background: #161b22; /* GitHub Dark: canvas.overlay */
+  border-bottom: 1px solid #30363d; /* GitHub Dark: border.default */
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
-.toolbar button { 
-  background: linear-gradient(180deg, #0e639c 0%, #0a5a8c 100%);
-  border: 1px solid #0d5a8a; 
-  color: white; 
-  padding: 6px 12px; 
-  cursor: pointer; 
-  border-radius: 4px; 
+.toolbar button {
+  background-color: #21262d;
+  border: 1px solid rgba(240,246,252,0.1);
+  color: #c9d1d9;
+  padding: 5px 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: 0.2s cubic-bezier(0.3, 0, 0.5, 1);
+}
+.toolbar button:hover {
+  background-color: #30363d;
+  border-color: #8b949e;
+}
+#status {
+  color: #8b949e;
   font-size: 12px;
-  transition: all 0.2s;
-}
-.toolbar button:hover { 
-  background: linear-gradient(180deg, #1177bb 0%, #0e639c 100%);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-#status { 
-  color: #8a8a8a; 
-  font-size: 11px;
-  padding: 4px 8px;
-  background: rgba(0,0,0,0.2);
-  border-radius: 3px;
+  padding: 4px 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
 }
 
 /* 容器 */
 .container { display: flex; flex: 1; overflow: hidden; }
 
 /* 树面板 */
-.tree-panel { 
-  width: 280px; 
+.tree-panel {
+  width: 300px;
   min-width: 200px;
-  border-right: 1px solid #3c3c3c; 
-  display: flex; 
+  border-right: 1px solid #30363d;
+  display: flex;
   flex-direction: column;
-  background: #252526;
+  background: #0d1117;
 }
-.props-panel { 
-  flex: 1; 
-  display: flex; 
+.props-panel {
+  flex: 1;
+  display: flex;
   flex-direction: column;
-  background: #1e1e1e;
+  background: #0d1117;
 }
 .panel-header {
-  padding: 10px 12px;
-  background: linear-gradient(180deg, #3c3c3c 0%, #333 100%);
-  border-bottom: 1px solid #1a1a1a;
+  padding: 12px 16px;
+  background: #161b22;
+  border-bottom: 1px solid #30363d;
   font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: #ccc;
+  font-size: 13px;
+  color: #f0f6fc;
 }
 #nodeCount {
   font-weight: normal;
@@ -108,18 +108,23 @@ body {
 .tree-node:hover { 
   background: rgba(255,255,255,0.05);
 }
-.tree-node.selected { 
-  background: rgba(14, 99, 156, 0.4);
-  border-left-color: #0e639c;
+.tree-node.selected {
+  background: #1f6feb; /* GitHub Dark: accent.emphasis or similar selection */
+  color: #ffffff;
+}
+.tree-node.selected .name,
+.tree-node.selected .node-icon,
+.tree-node.selected .toggle {
+  color: #ffffff;
 }
 .tree-node .toggle {
   display: inline-block;
-  width: 16px;
+  width: 20px;
   text-align: center;
   cursor: pointer;
   user-select: none;
-  color: #858585;
-  font-size: 10px;
+  color: #8b949e;
+  font-size: 12px;
 }
 .tree-node .node-icon {
   display: inline-block;
@@ -129,8 +134,9 @@ body {
   font-size: 12px;
 }
 .tree-node .name {
-  color: #4ec9b0;
-  font-weight: 500;
+  color: #adbac7;
+  font-weight: 400;
+  font-size: 14px;
 }
 .tree-node.active-false { 
   opacity: 0.4;
@@ -140,69 +146,64 @@ body {
 }
 
 /* 属性组 */
-.prop-group { 
-  margin: 0 0 8px 0;
-  border-bottom: 1px solid #2d2d2d;
+.prop-group {
+  margin-bottom: 16px;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  margin: 8px 16px;
+  overflow: hidden;
 }
-.prop-group-title { 
-  color: #569cd6; 
-  padding: 8px 12px; 
-  background: rgba(86, 156, 214, 0.1);
+.prop-group-title {
+  color: #f0f6fc;
+  padding: 8px 16px;
+  background: #161b22;
   font-weight: 600;
-  font-size: 11px;
-  position: sticky;
-  top: 0;
+  font-size: 13px;
+  border-bottom: 1px solid #30363d;
 }
 
 /* 属性行 */
-.prop-row { 
-  display: flex; 
-  padding: 4px 12px; 
+.prop-row {
+  display: flex;
+  padding: 8px 16px;
   align-items: center;
-  border-bottom: 1px solid rgba(255,255,255,0.03);
+  border-bottom: 1px solid #21262d;
 }
 .prop-row:hover {
   background: rgba(255,255,255,0.02);
 }
-.prop-name { 
-  width: 90px; 
-  color: #9cdcfe; 
+.prop-name {
+  width: 120px;
+  color: #8b949e;
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: 13px;
 }
-.prop-value { 
-  flex: 1; 
-  color: #ce9178;
+.prop-value {
+  flex: 1;
+  color: #c9d1d9;
 }
 
 /* 输入控件 */
-.prop-value input[type="text"] { 
-  background: #3c3c3c; 
-  border: 1px solid #555; 
-  color: #d4d4d4; 
-  padding: 4px 8px; 
+.prop-value input[type="text"],
+.prop-value input[type="number"] {
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+.prop-value input[type="text"] {
   width: 100%;
-  border-radius: 3px;
-  font-size: 11px;
-  transition: border-color 0.2s;
 }
-.prop-value input[type="text"]:focus {
-  border-color: #0e639c;
+.prop-value input[type="number"] {
+  width: 70px;
+}
+.prop-value input:focus {
+  border-color: #58a6ff;
   outline: none;
-}
-.prop-value input[type="number"] { 
-  background: #3c3c3c; 
-  border: 1px solid #555; 
-  color: #d4d4d4; 
-  padding: 4px 6px; 
-  width: 55px;
-  border-radius: 3px;
-  font-size: 11px;
-  text-align: center;
-}
-.prop-value input[type="number"]:focus {
-  border-color: #0e639c;
-  outline: none;
+  box-shadow: 0 0 0 3px rgba(31,111,235,0.3);
 }
 .prop-value input[type="checkbox"] { 
   width: 14px; 
@@ -219,9 +220,9 @@ body {
   flex-wrap: wrap;
 }
 .prop-multi label {
-  color: #6a6a6a;
-  font-size: 10px;
-  min-width: 10px;
+  color: #8b949e;
+  font-size: 11px;
+  min-width: 12px;
   font-weight: 600;
 }
 
@@ -229,31 +230,36 @@ body {
 .prop-value select,
 .layer-select,
 .enum-select {
-  background: #3c3c3c;
-  border: 1px solid #555;
-  color: #d4d4d4;
-  padding: 4px 8px;
+  background-color: #0d1117;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+  padding: 5px 12px;
   width: 100%;
-  border-radius: 3px;
-  font-size: 11px;
-  transition: border-color 0.2s;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: 0.2s;
   cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%238b949e'%3E%3Cpath d='M4.427 7.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 7H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
 }
 .prop-value select:focus,
 .layer-select:focus,
 .enum-select:focus {
-  border-color: #0e639c;
+  border-color: #58a6ff;
   outline: none;
+  box-shadow: 0 0 0 3px rgba(31,111,235,0.3);
 }
 .prop-value select:hover,
 .layer-select:hover,
 .enum-select:hover {
-  border-color: #666;
+  border-color: #8b949e;
 }
 .prop-value select option,
 .layer-select option,
 .enum-select option {
-  background: #3c3c3c;
-  color: #d4d4d4;
-  padding: 4px;
+  background: #161b22;
+  color: #c9d1d9;
 }

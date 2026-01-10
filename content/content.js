@@ -43,16 +43,24 @@ async function injectAllScripts() {
 }
 
 // 开始注入
-injectAllScripts();
+injectAllScripts().then(() => {
+  // 脚本注入完成后，通知注入脚本开始自动刷新
+  window.postMessage({ source: 'cc-inspector', type: 'startAutoRefresh' }, '*');
+});
 
 // ========== 消息通信 ==========
 let pendingCallback = null;
 
 // 监听来自注入脚本的消息
 window.addEventListener('message', e => {
-  if (e.data && e.data.source === 'cc-inspector-inject' && pendingCallback) {
-    pendingCallback(e.data);
-    pendingCallback = null;
+  if (e.data && e.data.source === 'cc-inspector-inject') {
+    if (e.data.type === 'status' || e.data.type === 'tree' || e.data.type === 'props') {
+      chrome.runtime.sendMessage({ ...e.data, source: 'cc-inspector-content' });
+    }
+    if (pendingCallback) {
+      pendingCallback(e.data);
+      pendingCallback = null;
+    }
   }
 });
 

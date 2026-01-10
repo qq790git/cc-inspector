@@ -256,6 +256,148 @@
         { name: 'TILED', value: 2 },
         { name: 'FILLED', value: 3 }
       ];
+    },
+
+    /**
+     * 获取Sprite的FillType枚举
+     * Cocos Creator中Sprite.FillType定义
+     */
+    getSpriteFillTypes() {
+      const cc = this.getCC();
+      if (!cc) return this.getDefaultSpriteFillTypes();
+      
+      const types = [];
+      
+      // Cocos Creator 3.x - cc.Sprite.FillType
+      if (cc.Sprite && cc.Sprite.FillType) {
+        const fillType = cc.Sprite.FillType;
+        for (const name in fillType) {
+          if (typeof fillType[name] === 'number') {
+            types.push({ name: name, value: fillType[name] });
+          }
+        }
+      }
+      // Cocos Creator 2.x - cc.Sprite.FillType
+      else if (cc.Sprite && cc.Sprite.FillType) {
+        const fillType = cc.Sprite.FillType;
+        for (const name in fillType) {
+          if (typeof fillType[name] === 'number') {
+            types.push({ name: name, value: fillType[name] });
+          }
+        }
+      }
+      
+      if (types.length === 0) {
+        return this.getDefaultSpriteFillTypes();
+      }
+      
+      types.sort((a, b) => a.value - b.value);
+      return types;
+    },
+
+    /**
+     * 默认的Sprite FillType枚举值
+     */
+    getDefaultSpriteFillTypes() {
+      return [
+        { name: 'HORIZONTAL', value: 0 },
+        { name: 'VERTICAL', value: 1 },
+        { name: 'RADIAL', value: 2 }
+      ];
+    },
+
+    /**
+     * 获取Label的HorizontalAlign枚举
+     */
+    getLabelHorizontalAligns() {
+      const cc = this.getCC();
+      if (!cc) return this.getDefaultLabelHorizontalAligns();
+      
+      const aligns = [];
+      const HorizontalAlign = cc.Label?.HorizontalAlign || cc.HorizontalAlign;
+      
+      if (HorizontalAlign) {
+        for (const name in HorizontalAlign) {
+          if (typeof HorizontalAlign[name] === 'number') {
+            aligns.push({ name: name, value: HorizontalAlign[name] });
+          }
+        }
+      }
+      
+      if (aligns.length === 0) return this.getDefaultLabelHorizontalAligns();
+      aligns.sort((a, b) => a.value - b.value);
+      return aligns;
+    },
+
+    getDefaultLabelHorizontalAligns() {
+      return [
+        { name: 'LEFT', value: 0 },
+        { name: 'CENTER', value: 1 },
+        { name: 'RIGHT', value: 2 }
+      ];
+    },
+
+    /**
+     * 获取Label的VerticalAlign枚举
+     */
+    getLabelVerticalAligns() {
+      const cc = this.getCC();
+      if (!cc) return this.getDefaultLabelVerticalAligns();
+      
+      const aligns = [];
+      const VerticalAlign = cc.Label?.VerticalAlign || cc.VerticalAlign;
+      
+      if (VerticalAlign) {
+        for (const name in VerticalAlign) {
+          if (typeof VerticalAlign[name] === 'number') {
+            aligns.push({ name: name, value: VerticalAlign[name] });
+          }
+        }
+      }
+      
+      if (aligns.length === 0) return this.getDefaultLabelVerticalAligns();
+      aligns.sort((a, b) => a.value - b.value);
+      return aligns;
+    },
+
+    getDefaultLabelVerticalAligns() {
+      return [
+        { name: 'TOP', value: 0 },
+        { name: 'CENTER', value: 1 },
+        { name: 'BOTTOM', value: 2 }
+      ];
+    },
+
+    /**
+     * 获取Label的Overflow枚举
+     */
+    getLabelOverflows() {
+      const cc = this.getCC();
+      if (!cc) return this.getDefaultLabelOverflows();
+      
+      const overflows = [];
+      const Overflow = cc.Label?.Overflow || cc.Overflow;
+      
+      if (Overflow) {
+        for (const name in Overflow) {
+          if (typeof Overflow[name] === 'number') {
+            overflows.push({ name: name, value: Overflow[name] });
+          }
+        }
+      }
+      
+      if (overflows.length === 0) return this.getDefaultLabelOverflows();
+      overflows.sort((a, b) => a.value - b.value);
+      return overflows;
+    },
+
+    getDefaultLabelOverflows() {
+      return [
+        { name: 'NONE', value: 0 },
+        { name: 'CLAMP', value: 1 },
+        { name: 'SHRINK', value: 2 },
+        { name: 'RESIZE_HEIGHT', value: 3 }
+      ];
     }
   };
 

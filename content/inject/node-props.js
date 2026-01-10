@@ -174,7 +174,18 @@
             });
           }
         } catch(e) {}
-        try { if (comp.fillType !== undefined) this.addProp(compProps, 'fillType', comp.fillType, 'number'); } catch(e) {}
+        try {
+          if (comp.fillType !== undefined) {
+            const fillTypes = utils.getSpriteFillTypes();
+            compProps.properties.push({
+              name: 'fillType',
+              value: comp.fillType,
+              type: 'enum',
+              editable: true,
+              options: fillTypes
+            });
+          }
+        } catch(e) {}
         try { if (comp.fillStart !== undefined) this.addProp(compProps, 'fillStart', comp.fillStart, 'number'); } catch(e) {}
         try { if (comp.fillRange !== undefined) this.addProp(compProps, 'fillRange', comp.fillRange, 'number'); } catch(e) {}
         try { if (comp.fillCenter) this.addVec2(compProps, 'fillCenter', comp.fillCenter); } catch(e) {}
@@ -185,9 +196,39 @@
         try { if (comp.string !== undefined) this.addProp(compProps, 'string', comp.string, 'string'); } catch(e) {}
         try { if (comp.fontSize !== undefined) this.addProp(compProps, 'fontSize', comp.fontSize, 'number'); } catch(e) {}
         try { if (comp.lineHeight !== undefined) this.addProp(compProps, 'lineHeight', comp.lineHeight, 'number'); } catch(e) {}
-        try { if (comp.horizontalAlign !== undefined) this.addProp(compProps, 'horizontalAlign', comp.horizontalAlign, 'number'); } catch(e) {}
-        try { if (comp.verticalAlign !== undefined) this.addProp(compProps, 'verticalAlign', comp.verticalAlign, 'number'); } catch(e) {}
-        try { if (comp.overflow !== undefined) this.addProp(compProps, 'overflow', comp.overflow, 'number'); } catch(e) {}
+        try {
+          if (comp.horizontalAlign !== undefined) {
+            compProps.properties.push({
+              name: 'horizontalAlign',
+              value: comp.horizontalAlign,
+              type: 'enum',
+              editable: true,
+              options: utils.getLabelHorizontalAligns()
+            });
+          }
+        } catch(e) {}
+        try {
+          if (comp.verticalAlign !== undefined) {
+            compProps.properties.push({
+              name: 'verticalAlign',
+              value: comp.verticalAlign,
+              type: 'enum',
+              editable: true,
+              options: utils.getLabelVerticalAligns()
+            });
+          }
+        } catch(e) {}
+        try {
+          if (comp.overflow !== undefined) {
+            compProps.properties.push({
+              name: 'overflow',
+              value: comp.overflow,
+              type: 'enum',
+              editable: true,
+              options: utils.getLabelOverflows()
+            });
+          }
+        } catch(e) {}
         try { if (comp.enableWrapText !== undefined) this.addProp(compProps, 'enableWrapText', comp.enableWrapText, 'boolean'); } catch(e) {}
         try { if (comp.spacingX !== undefined) this.addProp(compProps, 'spacingX', comp.spacingX, 'number'); } catch(e) {}
         try { if (comp.color) this.addColor(compProps, 'color', comp.color); } catch(e) {}

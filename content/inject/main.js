@@ -27,6 +27,24 @@
   waitForModules(() => {
     const { utils, nodeTree, nodeProps, performance, textureReplace, nodeHighlight } = window.__CCInspector;
 
+    // 定时检测 Cocos 引擎并报告状态
+    let lastDetected = false;
+    setInterval(() => {
+      const cc = utils.getCC();
+      const isDetected = !!cc;
+      if (isDetected !== lastDetected) {
+        lastDetected = isDetected;
+        if (isDetected) {
+          window.postMessage({
+            source: 'cc-inspector-inject',
+            type: 'status',
+            data: 'detected',
+            version: utils.getVersion()
+          }, '*');
+        }
+      }
+    }, 1000);
+
     // ========== DevTools 面板消息处理 ==========
     window.addEventListener('message', e => {
       if (e.data && e.data.source === 'cc-inspector') {
@@ -38,6 +56,9 @@
 
         const scene = utils.getScene();
 
+        // 记录最后一次发送的树的 JSON，避免频繁发送相同数据
+        let lastTreeJson = '';
+
         switch (e.data.type) {
           case 'getTree': {
             const tree = scene ? [nodeTree.buildTree(scene)] : [];
@@ -47,6 +68,27 @@
               tree: tree, 
               version: utils.getVersion() 
             }, '*');
+            break;
+          }
+
+          case 'startAutoRefresh': {
+            if (window.__CCInspector._refreshTimer) clearInterval(window.__CCInspector._refreshTimer);
+            window.__CCInspector._refreshTimer = setInterval(() => {
+              const currentScene = utils.getScene();
+              if (currentScene) {
+                const tree = [nodeTree.buildTree(currentScene)];
+                const treeJson = JSON.stringify(tree);
+                if (treeJson !== lastTreeJson) {
+                  lastTreeJson = treeJson;
+                  window.postMessage({
+                    source: 'cc-inspector-inject',
+                    type: 'tree',
+                    tree: tree,
+                    version: utils.getVersion()
+                  }, '*');
+                }
+              }
+            }, 1000); // 1秒检查一次变化
             break;
           }
           

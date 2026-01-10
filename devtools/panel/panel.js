@@ -239,10 +239,10 @@ setTimeout(() => {
   port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
 }, 500);
 
-// 自动刷新 - 500ms间隔
+// 自动刷新 - 1000ms间隔 (降低轮询频率，依靠主动推送)
 setInterval(() => {
   port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
   if (selectedNode) {
     port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode });
   }
-}, 500);
+}, 1000);
