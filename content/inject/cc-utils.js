@@ -100,6 +100,162 @@
         }
       }
       return null;
+    },
+
+    /**
+     * 获取Layers定义
+     * 返回Cocos Creator中定义的所有Layer及其值
+     */
+    getLayers() {
+      const cc = this.getCC();
+      if (!cc) return [];
+      
+      const layers = [];
+      
+      // Cocos Creator 3.x - cc.Layers.Enum
+      if (cc.Layers && cc.Layers.Enum) {
+        const layerEnum = cc.Layers.Enum;
+        for (const name in layerEnum) {
+          if (typeof layerEnum[name] === 'number') {
+            layers.push({ name: name, value: layerEnum[name] });
+          }
+        }
+      }
+      // Cocos Creator 2.x - 通常没有Layer概念，但尝试兼容
+      else if (cc.Node && cc.Node.BuiltinGroupIndex) {
+        const builtinGroups = cc.Node.BuiltinGroupIndex;
+        for (const name in builtinGroups) {
+          if (typeof builtinGroups[name] === 'number') {
+            layers.push({ name: name, value: builtinGroups[name] });
+          }
+        }
+      }
+      
+      // 如果没有找到任何Layer，返回默认的Layer列表（3.x常见值）
+      if (layers.length === 0) {
+        layers.push(
+          { name: 'NONE', value: 0 },
+          { name: 'IGNORE_RAYCAST', value: 1 << 20 },
+          { name: 'GIZMOS', value: 1 << 21 },
+          { name: 'EDITOR', value: 1 << 22 },
+          { name: 'UI_3D', value: 1 << 23 },
+          { name: 'SCENE_GIZMO', value: 1 << 24 },
+          { name: 'UI_2D', value: 1 << 25 },
+          { name: 'PROFILER', value: 1 << 28 },
+          { name: 'DEFAULT', value: 1 << 30 }
+        );
+      }
+      
+      // 按值排序
+      layers.sort((a, b) => a.value - b.value);
+      
+      return layers;
+    },
+
+    /**
+     * 根据Layer值获取Layer名称
+     */
+    getLayerName(layerValue) {
+      const layers = this.getLayers();
+      const layer = layers.find(l => l.value === layerValue);
+      return layer ? layer.name : String(layerValue);
+    },
+
+    /**
+     * 获取Sprite的SizeMode枚举
+     * Cocos Creator中Sprite.SizeMode定义
+     */
+    getSpriteSizeModes() {
+      const cc = this.getCC();
+      if (!cc) return this.getDefaultSpriteSizeModes();
+      
+      const modes = [];
+      
+      // Cocos Creator 3.x - cc.Sprite.SizeMode
+      if (cc.Sprite && cc.Sprite.SizeMode) {
+        const sizeMode = cc.Sprite.SizeMode;
+        for (const name in sizeMode) {
+          if (typeof sizeMode[name] === 'number') {
+            modes.push({ name: name, value: sizeMode[name] });
+          }
+        }
+      }
+      // Cocos Creator 2.x - cc.Sprite.SizeMode
+      else if (cc.Sprite && cc.Sprite.SizeMode) {
+        const sizeMode = cc.Sprite.SizeMode;
+        for (const name in sizeMode) {
+          if (typeof sizeMode[name] === 'number') {
+            modes.push({ name: name, value: sizeMode[name] });
+          }
+        }
+      }
+      
+      if (modes.length === 0) {
+        return this.getDefaultSpriteSizeModes();
+      }
+      
+      modes.sort((a, b) => a.value - b.value);
+      return modes;
+    },
+
+    /**
+     * 默认的Sprite SizeMode枚举值
+     */
+    getDefaultSpriteSizeModes() {
+      return [
+        { name: 'CUSTOM', value: 0 },
+        { name: 'TRIMMED', value: 1 },
+        { name: 'RAW', value: 2 }
+      ];
+    },
+
+    /**
+     * 获取Sprite的Type枚举
+     * Cocos Creator中Sprite.Type定义
+     */
+    getSpriteTypes() {
+      const cc = this.getCC();
+      if (!cc) return this.getDefaultSpriteTypes();
+      
+      const types = [];
+      
+      // Cocos Creator 3.x - cc.Sprite.Type
+      if (cc.Sprite && cc.Sprite.Type) {
+        const spriteType = cc.Sprite.Type;
+        for (const name in spriteType) {
+          if (typeof spriteType[name] === 'number') {
+            types.push({ name: name, value: spriteType[name] });
+          }
+        }
+      }
+      // Cocos Creator 2.x - cc.Sprite.Type
+      else if (cc.Sprite && cc.Sprite.Type) {
+        const spriteType = cc.Sprite.Type;
+        for (const name in spriteType) {
+          if (typeof spriteType[name] === 'number') {
+            types.push({ name: name, value: spriteType[name] });
+          }
+        }
+      }
+      
+      if (types.length === 0) {
+        return this.getDefaultSpriteTypes();
+      }
+      
+      types.sort((a, b) => a.value - b.value);
+      return types;
+    },
+
+    /**
+     * 默认的Sprite Type枚举值
+     */
+    getDefaultSpriteTypes() {
+      return [
+        { name: 'SIMPLE', value: 0 },
+        { name: 'SLICED', value: 1 },
+        { name: 'TILED', value: 2 },
+        { name: 'FILLED', value: 3 }
+      ];
     }
   };
 

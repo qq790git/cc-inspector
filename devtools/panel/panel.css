@@ -212,15 +212,48 @@ body {
 }
 
 /* 多分量属性 */
-.prop-multi { 
-  display: flex; 
-  align-items: center; 
+.prop-multi {
+  display: flex;
+  align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
-.prop-multi label { 
-  color: #6a6a6a; 
-  font-size: 10px; 
+.prop-multi label {
+  color: #6a6a6a;
+  font-size: 10px;
   min-width: 10px;
   font-weight: 600;
+}
+
+/* 下拉选择框 */
+.prop-value select,
+.layer-select,
+.enum-select {
+  background: #3c3c3c;
+  border: 1px solid #555;
+  color: #d4d4d4;
+  padding: 4px 8px;
+  width: 100%;
+  border-radius: 3px;
+  font-size: 11px;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+.prop-value select:focus,
+.layer-select:focus,
+.enum-select:focus {
+  border-color: #0e639c;
+  outline: none;
+}
+.prop-value select:hover,
+.layer-select:hover,
+.enum-select:hover {
+  border-color: #666;
+}
+.prop-value select option,
+.layer-select option,
+.enum-select option {
+  background: #3c3c3c;
+  color: #d4d4d4;
+  padding: 4px;
 }

@@ -93,7 +93,18 @@
         
         // 层级
         try { if (node.zIndex !== undefined) this.addProp(nodeProps, 'zIndex', node.zIndex, 'number'); } catch(e) {}
-        try { if (node.layer !== undefined) this.addProp(nodeProps, 'layer', node.layer, 'number'); } catch(e) {}
+        try {
+          if (node.layer !== undefined) {
+            const layers = utils.getLayers();
+            nodeProps.properties.push({
+              name: 'layer',
+              value: node.layer,
+              type: 'layer',
+              editable: true,
+              options: layers
+            });
+          }
+        } catch(e) {}
         
         // UUID只读
         try { if (node.uuid) nodeProps.properties.push({ name: 'uuid', value: node.uuid, type: 'string', editable: false }); } catch(e) {}
@@ -139,8 +150,30 @@
       
       if (isSprite) {
         try { if (comp.spriteFrame) compProps.properties.push({ name: 'spriteFrame', value: comp.spriteFrame.name || comp.spriteFrame._name || 'SpriteFrame', type: 'string', editable: false }); } catch(e) {}
-        try { if (comp.type !== undefined) this.addProp(compProps, 'type', comp.type, 'number'); } catch(e) {}
-        try { if (comp.sizeMode !== undefined) this.addProp(compProps, 'sizeMode', comp.sizeMode, 'number'); } catch(e) {}
+        try {
+          if (comp.type !== undefined) {
+            const spriteTypes = utils.getSpriteTypes();
+            compProps.properties.push({
+              name: 'type',
+              value: comp.type,
+              type: 'enum',
+              editable: true,
+              options: spriteTypes
+            });
+          }
+        } catch(e) {}
+        try {
+          if (comp.sizeMode !== undefined) {
+            const sizeModes = utils.getSpriteSizeModes();
+            compProps.properties.push({
+              name: 'sizeMode',
+              value: comp.sizeMode,
+              type: 'enum',
+              editable: true,
+              options: sizeModes
+            });
+          }
+        } catch(e) {}
         try { if (comp.fillType !== undefined) this.addProp(compProps, 'fillType', comp.fillType, 'number'); } catch(e) {}
         try { if (comp.fillStart !== undefined) this.addProp(compProps, 'fillStart', comp.fillStart, 'number'); } catch(e) {}
         try { if (comp.fillRange !== undefined) this.addProp(compProps, 'fillRange', comp.fillRange, 'number'); } catch(e) {}

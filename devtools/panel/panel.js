@@ -188,6 +188,20 @@ function renderProps(props) {
             port.postMessage({ type: 'setColor', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode, comp: comp.name, prop: p.name, value: vals });
           };
         });
+      } else if (p.type === 'layer' || p.type === 'enum') {
+        // 枚举下拉框（Layer、SizeMode、Type等）
+        let optionsHtml = '';
+        if (p.options && p.options.length > 0) {
+          p.options.forEach(opt => {
+            const selected = opt.value === p.value ? 'selected' : '';
+            optionsHtml += `<option value="${opt.value}" ${selected}>${opt.name}</option>`;
+          });
+        }
+        row.innerHTML = `<span class="prop-name">${p.name}</span><span class="prop-value"><select class="enum-select">${optionsHtml}</select></span>`;
+        const select = row.querySelector('select');
+        select.onchange = () => {
+          port.postMessage({ type: 'setProp', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode, comp: comp.name, prop: p.name, value: select.value });
+        };
       } else if (p.editable && p.type === 'boolean') {
         row.innerHTML = `<span class="prop-name">${p.name}</span><span class="prop-value"><input type="checkbox" ${p.value ? 'checked' : ''}></span>`;
         const checkbox = row.querySelector('input');
