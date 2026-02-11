@@ -51,7 +51,8 @@
         let worldPos = { x: 0, y: 0 };
 
         // 获取尺寸 - 优先从 UITransform (3.x) 获取
-        const uiTransform = utils.findComponent(node, 'UITransform');
+        const is3x = utils.is3x();
+        const uiTransform = is3x ? utils.findComponent(node, 'UITransform') : null;
 
         if (uiTransform) {
           // 3.x
@@ -59,13 +60,13 @@
           height = uiTransform.contentSize.height;
           anchorX = uiTransform.anchorPoint.x;
           anchorY = uiTransform.anchorPoint.y;
-        } else if (node.width !== undefined && node.height !== undefined) {
+        } else if (!is3x && node.width !== undefined && node.height !== undefined) {
           // 2.x
           width = node.width;
           height = node.height;
           anchorX = node.anchorX !== undefined ? node.anchorX : 0.5;
           anchorY = node.anchorY !== undefined ? node.anchorY : 0.5;
-        } else if (node.contentSize) {
+        } else if (!is3x && node.contentSize) {
           width = node.contentSize.width;
           height = node.contentSize.height;
           anchorX = node.anchorX !== undefined ? node.anchorX : 0.5;
@@ -179,50 +180,35 @@
       // 取消之前的动画
       if (highlightAnimation) {
         clearTimeout(highlightAnimation);
+        highlightAnimation = null;
       }
 
-      // 移除之前的高亮
-      if (highlightOverlay) {
-        highlightOverlay.remove();
+      // 创建或更新高亮元素
+      if (!highlightOverlay) {
+        highlightOverlay = document.createElement('div');
+        highlightOverlay.id = 'cc-inspector-highlight';
+        document.body.appendChild(highlightOverlay);
       }
 
-      // 创建高亮元素
-      highlightOverlay = document.createElement('div');
-      highlightOverlay.id = 'cc-inspector-highlight';
       highlightOverlay.style.cssText = `
         position: fixed;
         left: ${rect.x}px;
         top: ${rect.y}px;
         width: ${rect.width}px;
         height: ${rect.height}px;
-        border: 3px solid #667eea;
-        background: rgba(102, 126, 234, 0.2);
+        border: 2px solid #667eea;
+        background: rgba(102, 126, 234, 0.25);
         pointer-events: none;
         z-index: 999996;
         box-sizing: border-box;
-        animation: ccHighlightFlash 0.5s ease-in-out 3;
+        transition: all 0.1s ease-out;
+        box-shadow: 0 0 8px rgba(102, 126, 234, 0.6);
       `;
 
       // 添加动画样式
       this.ensureAnimationStyle();
 
-      document.body.appendChild(highlightOverlay);
-
-      // 1.5秒后停止闪烁，再2秒后移除
-      highlightAnimation = setTimeout(() => {
-        if (highlightOverlay) {
-          highlightOverlay.style.animation = 'none';
-          highlightOverlay.style.opacity = '0.6';
-          highlightOverlay.style.transition = 'opacity 0.3s';
-          
-          setTimeout(() => {
-            if (highlightOverlay) {
-              highlightOverlay.remove();
-              highlightOverlay = null;
-            }
-          }, 2000);
-        }
-      }, 1500);
+      // 移除自动消失逻辑，改为由鼠标离开事件控制
     },
 
     /**

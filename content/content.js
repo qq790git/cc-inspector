@@ -55,7 +55,9 @@ let pendingCallback = null;
 window.addEventListener('message', e => {
   if (e.data && e.data.source === 'cc-inspector-inject') {
     if (e.data.type === 'status' || e.data.type === 'tree' || e.data.type === 'props') {
-      chrome.runtime.sendMessage({ ...e.data, source: 'cc-inspector-content' });
+      chrome.runtime.sendMessage({ ...e.data, source: 'cc-inspector-content' }).catch(err => {
+        // 忽略背景页未就绪的错误
+      });
     }
     if (pendingCallback) {
       pendingCallback(e.data);
@@ -98,7 +100,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       }
     }, 200);
     return true;
-  } else if (msg.type === 'setProp' || msg.type === 'setVec' || msg.type === 'setSize' || msg.type === 'setColor') {
+  } else if (msg.type === 'setProp' || msg.type === 'setVec' || msg.type === 'setSize' || msg.type === 'setColor' || msg.type === 'highlightNode' || msg.type === 'clearHighlight') {
     window.postMessage({ source: 'cc-inspector', ...msg }, '*');
   }
 });

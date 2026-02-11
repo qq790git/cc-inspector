@@ -83,7 +83,41 @@
      */
     getComponentName(comp) {
       if (!comp) return '';
-      return comp.__classname__ || comp.constructor?.name || '';
+      let name = comp.__classname__ || comp.constructor?.name || '';
+      if (name.startsWith('cc.')) name = name.substring(3);
+      return name;
+    },
+
+    /**
+     * 判断是否为 Cocos 节点
+     */
+    isNode(obj) {
+      if (!obj || typeof obj !== 'object') return false;
+      const cc = this.getCC();
+      if (cc && cc.Node && obj instanceof cc.Node) return true;
+      // 兜底检查
+      return !!(obj.uuid && obj.children && obj.addComponent);
+    },
+
+    /**
+     * 判断是否为 Cocos 组件
+     */
+    isComponent(obj) {
+      if (!obj || typeof obj !== 'object') return false;
+      const cc = this.getCC();
+      if (cc && cc.Component && obj instanceof cc.Component) return true;
+      // 兜底检查
+      return !!(obj.uuid && obj.node && obj.schedule);
+    },
+
+    /**
+     * 判断是否为 Cocos 资源
+     */
+    isAsset(obj) {
+      if (!obj || typeof obj !== 'object') return false;
+      const cc = this.getCC();
+      if (cc && cc.Asset && obj instanceof cc.Asset) return true;
+      return !!(obj._uuid && !obj.node);
     },
 
     /**

@@ -40,74 +40,91 @@
       try {
         // Node基本属性
         const nodeProps = { name: 'Node', properties: [] };
+        const addedNodeProps = new Set();
+        const addUniqueNodeProp = (name, value, type, extra = {}) => {
+          if (addedNodeProps.has(name)) return;
+          addedNodeProps.add(name);
+          nodeProps.properties.push({ name, value, type, editable: true, ...extra });
+        };
         
         // 基础属性
-        try { if (node.name !== undefined) this.addProp(nodeProps, 'name', node.name, 'string'); } catch(e) {}
-        try { if (node.active !== undefined) this.addProp(nodeProps, 'active', node.active, 'boolean'); } catch(e) {}
+        try { if (node.name !== undefined) addUniqueNodeProp('name', node.name, 'string'); } catch(e) {}
+        try { if (node.active !== undefined) addUniqueNodeProp('active', node.active, 'boolean'); } catch(e) {}
         
         // 位置 - 多分量
         try {
           if (node.position) {
+            addedNodeProps.add('position');
             this.addVec3(nodeProps, 'position', node.position);
           } else {
-            if (node.x !== undefined) this.addProp(nodeProps, 'x', node.x, 'number');
-            if (node.y !== undefined) this.addProp(nodeProps, 'y', node.y, 'number');
-            if (node.z !== undefined) this.addProp(nodeProps, 'z', node.z, 'number');
+            if (node.x !== undefined) addUniqueNodeProp('x', node.x, 'number');
+            if (node.y !== undefined) addUniqueNodeProp('y', node.y, 'number');
+            if (node.z !== undefined) addUniqueNodeProp('z', node.z, 'number');
           }
         } catch(e) {}
         
         // 旋转
-        try { if (node.angle !== undefined) this.addProp(nodeProps, 'angle', node.angle, 'number'); } catch(e) {}
-        try { if (node.eulerAngles) this.addVec3(nodeProps, 'eulerAngles', node.eulerAngles); } catch(e) {}
+        try { if (node.angle !== undefined) addUniqueNodeProp('angle', node.angle, 'number'); } catch(e) {}
+        try { if (node.eulerAngles) { addedNodeProps.add('eulerAngles'); this.addVec3(nodeProps, 'eulerAngles', node.eulerAngles); } } catch(e) {}
         
         // 缩放
         try {
           if (node.scale && typeof node.scale === 'object') {
+            addedNodeProps.add('scale');
             this.addVec3(nodeProps, 'scale', node.scale);
           } else {
-            if (node.scaleX !== undefined) this.addProp(nodeProps, 'scaleX', node.scaleX, 'number');
-            if (node.scaleY !== undefined) this.addProp(nodeProps, 'scaleY', node.scaleY, 'number');
-            if (node.scaleZ !== undefined) this.addProp(nodeProps, 'scaleZ', node.scaleZ, 'number');
+            if (node.scaleX !== undefined) addUniqueNodeProp('scaleX', node.scaleX, 'number');
+            if (node.scaleY !== undefined) addUniqueNodeProp('scaleY', node.scaleY, 'number');
+            if (node.scaleZ !== undefined) addUniqueNodeProp('scaleZ', node.scaleZ, 'number');
           }
         } catch(e) {}
         
+        // 锚点和尺寸 (3.x 移到了 UITransform)
+        const is3x = utils.is3x();
+        let uiTransform = null;
+        if (is3x) {
+          uiTransform = utils.findComponent(node, 'UITransform');
+        }
+
         // 锚点
         try {
-          if (node.anchorX !== undefined || node.anchorY !== undefined) {
+          if (uiTransform) {
+            addedNodeProps.add('anchor');
+            this.addVec2(nodeProps, 'anchor', uiTransform.anchorPoint);
+          } else if (!is3x && (node.anchorX !== undefined || node.anchorY !== undefined)) {
+            addedNodeProps.add('anchor');
             this.addVec2(nodeProps, 'anchor', { x: node.anchorX ?? 0, y: node.anchorY ?? 0 });
           }
         } catch(e) {}
         
         // 尺寸
         try {
-          if (node.contentSize) {
+          if (uiTransform) {
+            addedNodeProps.add('contentSize');
+            this.addSize(nodeProps, 'contentSize', uiTransform.contentSize);
+          } else if (!is3x && node.contentSize) {
+            addedNodeProps.add('contentSize');
             this.addSize(nodeProps, 'contentSize', node.contentSize);
-          } else if (node.width !== undefined || node.height !== undefined) {
+          } else if (!is3x && (node.width !== undefined || node.height !== undefined)) {
+            addedNodeProps.add('size');
             this.addSize(nodeProps, 'size', { width: node.width ?? 0, height: node.height ?? 0 });
           }
         } catch(e) {}
         
         // 透明度和颜色
-        try { if (node.opacity !== undefined) this.addProp(nodeProps, 'opacity', node.opacity, 'number'); } catch(e) {}
-        try { if (node.color) this.addColor(nodeProps, 'color', node.color); } catch(e) {}
+        try { if (node.opacity !== undefined) addUniqueNodeProp('opacity', node.opacity, 'number'); } catch(e) {}
+        try { if (node.color) { addedNodeProps.add('color'); this.addColor(nodeProps, 'color', node.color); } } catch(e) {}
         
         // 层级
-        try { if (node.zIndex !== undefined) this.addProp(nodeProps, 'zIndex', node.zIndex, 'number'); } catch(e) {}
+        try { if (node.zIndex !== undefined) addUniqueNodeProp('zIndex', node.zIndex, 'number'); } catch(e) {}
         try {
           if (node.layer !== undefined) {
-            const layers = utils.getLayers();
-            nodeProps.properties.push({
-              name: 'layer',
-              value: node.layer,
-              type: 'layer',
-              editable: true,
-              options: layers
-            });
+            addUniqueNodeProp('layer', node.layer, 'layer', { options: utils.getLayers() });
           }
         } catch(e) {}
-        
-        // UUID只读
-        try { if (node.uuid) nodeProps.properties.push({ name: 'uuid', value: node.uuid, type: 'string', editable: false }); } catch(e) {}
+
+        // 对 Node 也进行一次通用扫描，以防有自定义扩展属性
+        this.addGenericProps(node, nodeProps, addedNodeProps);
         
         result.push(nodeProps);
 
@@ -125,8 +142,8 @@
             // 根据组件类型添加特定属性
             this.addComponentProps(comp, compName, compProps);
             
-            // UUID只读
-            try { if (comp.uuid) compProps.properties.push({ name: 'uuid', value: comp.uuid, type: 'string', editable: false }); } catch(e) {}
+            // UUID只读 (已隐藏)
+            // try { if (comp.uuid) compProps.properties.push({ name: 'uuid', value: comp.uuid, type: 'string', editable: false }); } catch(e) {}
             
             if (compProps.properties.length > 0) result.push(compProps);
           } catch(e) {}
@@ -148,158 +165,153 @@
       const isProgressBar = compName.includes('ProgressBar');
       const isToggle = compName.includes('Toggle');
       
+      // 记录已添加的属性名，避免重复
+      const addedProps = new Set();
+      const addUniqueProp = (name, value, type, extra = {}) => {
+        if (addedProps.has(name)) return;
+        addedProps.add(name);
+        compProps.properties.push({ name, value, type, editable: true, ...extra });
+      };
+
       if (isSprite) {
-        try { if (comp.spriteFrame) compProps.properties.push({ name: 'spriteFrame', value: comp.spriteFrame.name || comp.spriteFrame._name || 'SpriteFrame', type: 'string', editable: false }); } catch(e) {}
+        try { if (comp.spriteFrame) { addUniqueProp('spriteFrame', comp.spriteFrame.name || comp.spriteFrame._name || 'SpriteFrame', 'string', { editable: false }); } } catch(e) {}
         try {
           if (comp.type !== undefined) {
-            const spriteTypes = utils.getSpriteTypes();
-            compProps.properties.push({
-              name: 'type',
-              value: comp.type,
-              type: 'enum',
-              editable: true,
-              options: spriteTypes
-            });
+            addUniqueProp('type', comp.type, 'enum', { options: utils.getSpriteTypes() });
           }
         } catch(e) {}
         try {
           if (comp.sizeMode !== undefined) {
-            const sizeModes = utils.getSpriteSizeModes();
-            compProps.properties.push({
-              name: 'sizeMode',
-              value: comp.sizeMode,
-              type: 'enum',
-              editable: true,
-              options: sizeModes
-            });
+            addUniqueProp('sizeMode', comp.sizeMode, 'enum', { options: utils.getSpriteSizeModes() });
           }
         } catch(e) {}
         try {
           if (comp.fillType !== undefined) {
-            const fillTypes = utils.getSpriteFillTypes();
-            compProps.properties.push({
-              name: 'fillType',
-              value: comp.fillType,
-              type: 'enum',
-              editable: true,
-              options: fillTypes
-            });
+            addUniqueProp('fillType', comp.fillType, 'enum', { options: utils.getSpriteFillTypes() });
           }
         } catch(e) {}
-        try { if (comp.fillStart !== undefined) this.addProp(compProps, 'fillStart', comp.fillStart, 'number'); } catch(e) {}
-        try { if (comp.fillRange !== undefined) this.addProp(compProps, 'fillRange', comp.fillRange, 'number'); } catch(e) {}
-        try { if (comp.fillCenter) this.addVec2(compProps, 'fillCenter', comp.fillCenter); } catch(e) {}
-        try { if (comp.trim !== undefined) this.addProp(compProps, 'trim', comp.trim, 'boolean'); } catch(e) {}
-        try { if (comp.grayscale !== undefined) this.addProp(compProps, 'grayscale', comp.grayscale, 'boolean'); } catch(e) {}
-        try { if (comp.color) this.addColor(compProps, 'color', comp.color); } catch(e) {}
+        try { if (comp.color) { addedProps.add('color'); this.addColor(compProps, 'color', comp.color); } } catch(e) {}
       } else if (isLabel) {
-        try { if (comp.string !== undefined) this.addProp(compProps, 'string', comp.string, 'string'); } catch(e) {}
-        try { if (comp.fontSize !== undefined) this.addProp(compProps, 'fontSize', comp.fontSize, 'number'); } catch(e) {}
-        try { if (comp.lineHeight !== undefined) this.addProp(compProps, 'lineHeight', comp.lineHeight, 'number'); } catch(e) {}
+        try { if (comp.string !== undefined) { addUniqueProp('string', comp.string, 'string'); } } catch(e) {}
         try {
           if (comp.horizontalAlign !== undefined) {
-            compProps.properties.push({
-              name: 'horizontalAlign',
-              value: comp.horizontalAlign,
-              type: 'enum',
-              editable: true,
-              options: utils.getLabelHorizontalAligns()
-            });
+            addUniqueProp('horizontalAlign', comp.horizontalAlign, 'enum', { options: utils.getLabelHorizontalAligns() });
           }
         } catch(e) {}
         try {
           if (comp.verticalAlign !== undefined) {
-            compProps.properties.push({
-              name: 'verticalAlign',
-              value: comp.verticalAlign,
-              type: 'enum',
-              editable: true,
-              options: utils.getLabelVerticalAligns()
-            });
+            addUniqueProp('verticalAlign', comp.verticalAlign, 'enum', { options: utils.getLabelVerticalAligns() });
           }
         } catch(e) {}
         try {
           if (comp.overflow !== undefined) {
-            compProps.properties.push({
-              name: 'overflow',
-              value: comp.overflow,
-              type: 'enum',
-              editable: true,
-              options: utils.getLabelOverflows()
-            });
+            addUniqueProp('overflow', comp.overflow, 'enum', { options: utils.getLabelOverflows() });
           }
         } catch(e) {}
-        try { if (comp.enableWrapText !== undefined) this.addProp(compProps, 'enableWrapText', comp.enableWrapText, 'boolean'); } catch(e) {}
-        try { if (comp.spacingX !== undefined) this.addProp(compProps, 'spacingX', comp.spacingX, 'number'); } catch(e) {}
-        try { if (comp.color) this.addColor(compProps, 'color', comp.color); } catch(e) {}
-        try { if (comp.isBold !== undefined) this.addProp(compProps, 'isBold', comp.isBold, 'boolean'); } catch(e) {}
-        try { if (comp.isItalic !== undefined) this.addProp(compProps, 'isItalic', comp.isItalic, 'boolean'); } catch(e) {}
-        try { if (comp.isUnderline !== undefined) this.addProp(compProps, 'isUnderline', comp.isUnderline, 'boolean'); } catch(e) {}
-        try { if (comp.cacheMode !== undefined) this.addProp(compProps, 'cacheMode', comp.cacheMode, 'number'); } catch(e) {}
+        try { if (comp.color) { addedProps.add('color'); this.addColor(compProps, 'color', comp.color); } } catch(e) {}
       } else if (isButton) {
-        try { if (comp.interactable !== undefined) this.addProp(compProps, 'interactable', comp.interactable, 'boolean'); } catch(e) {}
-        try { if (comp.transition !== undefined) this.addProp(compProps, 'transition', comp.transition, 'number'); } catch(e) {}
-        try { if (comp.normalColor) this.addColor(compProps, 'normalColor', comp.normalColor); } catch(e) {}
-        try { if (comp.pressedColor) this.addColor(compProps, 'pressedColor', comp.pressedColor); } catch(e) {}
-        try { if (comp.hoverColor) this.addColor(compProps, 'hoverColor', comp.hoverColor); } catch(e) {}
-        try { if (comp.disabledColor) this.addColor(compProps, 'disabledColor', comp.disabledColor); } catch(e) {}
-        try { if (comp.duration !== undefined) this.addProp(compProps, 'duration', comp.duration, 'number'); } catch(e) {}
-        try { if (comp.zoomScale !== undefined) this.addProp(compProps, 'zoomScale', comp.zoomScale, 'number'); } catch(e) {}
+        try { if (comp.interactable !== undefined) { addUniqueProp('interactable', comp.interactable, 'boolean'); } } catch(e) {}
+        try { if (comp.normalColor) { addedProps.add('normalColor'); this.addColor(compProps, 'normalColor', comp.normalColor); } } catch(e) {}
       } else if (isUITransform) {
-        try { if (comp.contentSize) this.addSize(compProps, 'contentSize', comp.contentSize); } catch(e) {}
-        try { if (comp.anchorPoint) this.addVec2(compProps, 'anchorPoint', comp.anchorPoint); } catch(e) {}
-        try { if (comp.priority !== undefined) this.addProp(compProps, 'priority', comp.priority, 'number'); } catch(e) {}
-      } else if (isWidget) {
-        try { if (comp.isAlignTop !== undefined) this.addProp(compProps, 'isAlignTop', comp.isAlignTop, 'boolean'); } catch(e) {}
-        try { if (comp.isAlignBottom !== undefined) this.addProp(compProps, 'isAlignBottom', comp.isAlignBottom, 'boolean'); } catch(e) {}
-        try { if (comp.isAlignLeft !== undefined) this.addProp(compProps, 'isAlignLeft', comp.isAlignLeft, 'boolean'); } catch(e) {}
-        try { if (comp.isAlignRight !== undefined) this.addProp(compProps, 'isAlignRight', comp.isAlignRight, 'boolean'); } catch(e) {}
-        try { if (comp.top !== undefined) this.addProp(compProps, 'top', comp.top, 'number'); } catch(e) {}
-        try { if (comp.bottom !== undefined) this.addProp(compProps, 'bottom', comp.bottom, 'number'); } catch(e) {}
-        try { if (comp.left !== undefined) this.addProp(compProps, 'left', comp.left, 'number'); } catch(e) {}
-        try { if (comp.right !== undefined) this.addProp(compProps, 'right', comp.right, 'number'); } catch(e) {}
-        try { if (comp.isAlignHorizontalCenter !== undefined) this.addProp(compProps, 'isAlignHorizontalCenter', comp.isAlignHorizontalCenter, 'boolean'); } catch(e) {}
-        try { if (comp.isAlignVerticalCenter !== undefined) this.addProp(compProps, 'isAlignVerticalCenter', comp.isAlignVerticalCenter, 'boolean'); } catch(e) {}
-      } else if (isProgressBar) {
-        try { if (comp.progress !== undefined) this.addProp(compProps, 'progress', comp.progress, 'number'); } catch(e) {}
-        try { if (comp.mode !== undefined) this.addProp(compProps, 'mode', comp.mode, 'number'); } catch(e) {}
-        try { if (comp.totalLength !== undefined) this.addProp(compProps, 'totalLength', comp.totalLength, 'number'); } catch(e) {}
-        try { if (comp.reverse !== undefined) this.addProp(compProps, 'reverse', comp.reverse, 'boolean'); } catch(e) {}
-      } else if (isToggle) {
-        try { if (comp.isChecked !== undefined) this.addProp(compProps, 'isChecked', comp.isChecked, 'boolean'); } catch(e) {}
-        try { if (comp.interactable !== undefined) this.addProp(compProps, 'interactable', comp.interactable, 'boolean'); } catch(e) {}
-      } else {
-        // 通用属性遍历
-        this.addGenericProps(comp, compProps);
+        try { if (comp.contentSize) { addedProps.add('contentSize'); this.addSize(compProps, 'contentSize', comp.contentSize); } } catch(e) {}
+        try { if (comp.anchorPoint) { addedProps.add('anchorPoint'); this.addVec2(compProps, 'anchorPoint', comp.anchorPoint); } } catch(e) {}
       }
+
+      // 无论是否是内置组件，最后都进行通用属性扫描，以显示所有可见属性
+      this.addGenericProps(comp, compProps, addedProps);
     },
 
     /**
      * 添加通用组件属性
      */
-    addGenericProps(comp, compProps) {
+    addGenericProps(comp, compProps, addedProps = new Set()) {
+      const keys = new Set();
+      
+      // 1. 获取实例上的所有属性
       for (const key in comp) {
-        if (key.startsWith('_') || key === 'node' || key === 'enabled' || key === 'uuid' || typeof comp[key] === 'function') continue;
+        keys.add(key);
+      }
+
+      // 2. 获取 Cocos 类定义的属性 (2.x 为 __props__, 3.x 较为复杂但通常也在实例上)
+      if (comp.constructor && comp.constructor.__props__) {
+        comp.constructor.__props__.forEach(k => keys.add(k));
+      }
+
+      // 3. 遍历并过滤
+      for (const key of keys) {
+        // 过滤掉已添加的、内部私有的、以及基础字段
+        if (addedProps.has(key)) continue;
+        // 过滤掉下划线开头的私有属性、内部字段以及基础字段
+        if (key.startsWith('_') || key === 'node' || key === 'enabled' || key === 'uuid') continue;
+        
+        // 过滤掉函数
+        try {
+          if (typeof comp[key] === 'function') continue;
+        } catch(e) { continue; }
+
         try {
           let val = comp[key];
-          if (val === null || val === undefined) continue;
+          if (val === undefined) continue;
+          
           let type = typeof val;
           
-          if (type === 'number') {
+          if (val === null) {
+            this.addProp(compProps, key, 'null', 'string');
+          } else if (type === 'number') {
             this.addProp(compProps, key, val, 'number');
           } else if (type === 'string') {
             this.addProp(compProps, key, val, 'string');
           } else if (type === 'boolean') {
             this.addProp(compProps, key, val, 'boolean');
           } else if (type === 'object') {
-            if (val.constructor?.name === 'Color' || (val.r !== undefined && val.g !== undefined && val.b !== undefined)) {
+            // 识别 Cocos 特殊对象类型
+            const constructorName = val.constructor?.name;
+            
+            if (constructorName === 'Color' || (val.r !== undefined && val.g !== undefined && val.b !== undefined)) {
               this.addColor(compProps, key, val);
-            } else if (val.x !== undefined && val.y !== undefined && val.z !== undefined) {
+            } else if (constructorName === 'Vec3' || (val.x !== undefined && val.y !== undefined && val.z !== undefined)) {
               this.addVec3(compProps, key, val);
-            } else if (val.x !== undefined && val.y !== undefined) {
-              this.addVec2(compProps, key, val);
-            } else if (val.width !== undefined && val.height !== undefined) {
-              this.addSize(compProps, key, val);
+            } else if (constructorName === 'Vec2' || constructorName === 'Size' || (val.x !== undefined && val.y !== undefined) || (val.width !== undefined && val.height !== undefined)) {
+              if (val.width !== undefined) this.addSize(compProps, key, val);
+              else this.addVec2(compProps, key, val);
+            } else if (utils.isNode(val) || utils.isComponent(val) || utils.isAsset(val)) {
+              // 识别节点、组件或资源引用
+              const isNode = utils.isNode(val);
+              const isComp = utils.isComponent(val);
+              const isAsset = utils.isAsset(val);
+              
+              let targetUuid = val.uuid || val._uuid;
+              if (isComp && val.node) {
+                targetUuid = val.node.uuid || val.node._id;
+              }
+              
+              const compName = utils.getComponentName(val);
+              let displayName = val.name || val._name || (val.node ? val.node.name : '') || compName || 'Reference';
+              
+              // 统一显示格式：显示所属节点名称
+              if (isNode || isComp) {
+                displayName = isNode ? val.name : (val.node ? val.node.name : 'Unknown');
+              }
+
+              let nodeType = 'node';
+              if (isNode || isComp) {
+                const targetNode = isNode ? val : val.node;
+                if (targetNode && window.__CCInspector.nodeTree) {
+                  nodeType = window.__CCInspector.nodeTree.getNodeType(targetNode);
+                }
+              } else if (isAsset) {
+                nodeType = 'asset';
+              }
+
+              compProps.properties.push({
+                name: key,
+                value: displayName,
+                targetType: compName || (isAsset ? 'cc.Asset' : 'cc.Node'),
+                uuid: (isNode || isComp) ? targetUuid : null,
+                nodeType: nodeType,
+                type: (isNode || isComp || isAsset) ? 'node-ref' : 'string',
+                editable: false
+              });
             }
           }
         } catch (e) {}
@@ -319,7 +331,19 @@
     },
 
     setVec(node, comp, prop, value) {
-      const target = comp === 'Node' ? node : utils.findComponent(node, comp);
+      let target = comp === 'Node' ? node : utils.findComponent(node, comp);
+      const is3x = utils.is3x();
+
+      // 3.x 兼容性处理：anchor 移到了 UITransform
+      if (is3x && comp === 'Node' && prop === 'anchor') {
+        const uiTransform = utils.findComponent(node, 'UITransform');
+        if (uiTransform) {
+          uiTransform.anchorX = Number(value.x);
+          uiTransform.anchorY = Number(value.y);
+          return;
+        }
+      }
+
       if (target && target[prop]) {
         target[prop].x = Number(value.x);
         target[prop].y = Number(value.y);
@@ -327,19 +351,30 @@
       } else if (target) {
         if (prop === 'position' && target.setPosition) target.setPosition(Number(value.x), Number(value.y), Number(value.z) || 0);
         else if (prop === 'scale' && target.setScale) target.setScale(Number(value.x), Number(value.y), Number(value.z) || 1);
-        else if (prop === 'anchor') { target.anchorX = Number(value.x); target.anchorY = Number(value.y); }
+        else if (prop === 'anchor' && !is3x) { target.anchorX = Number(value.x); target.anchorY = Number(value.y); }
       }
     },
 
     setSize(node, comp, prop, value) {
-      const target = comp === 'Node' ? node : utils.findComponent(node, comp);
+      let target = comp === 'Node' ? node : utils.findComponent(node, comp);
+      const is3x = utils.is3x();
+
+      // 3.x 兼容性处理：size 移到了 UITransform
+      if (is3x && comp === 'Node' && (prop === 'size' || prop === 'contentSize')) {
+        const uiTransform = utils.findComponent(node, 'UITransform');
+        if (uiTransform) {
+          uiTransform.setContentSize(Number(value.width), Number(value.height));
+          return;
+        }
+      }
+
       if (target) {
         if (target[prop]) {
           target[prop].width = Number(value.width);
           target[prop].height = Number(value.height);
         } else if (prop === 'size' || prop === 'contentSize') {
           if (target.setContentSize) target.setContentSize(Number(value.width), Number(value.height));
-          else { target.width = Number(value.width); target.height = Number(value.height); }
+          else if (!is3x) { target.width = Number(value.width); target.height = Number(value.height); }
         }
       }
     },

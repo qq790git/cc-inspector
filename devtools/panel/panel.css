@@ -18,6 +18,35 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  display: flex;
+  align-items: center;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  padding: 2px 8px;
+  flex: 1;
+  min-width: 150px;
+}
+
+.search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  padding: 4px;
+  font-size: 12px;
+  color: #c9d1d9;
+}
+
+#searchCount {
+  font-size: 11px;
+  color: #8b949e;
+  white-space: nowrap;
+  margin-left: 4px;
 }
 .toolbar button {
   background-color: #21262d;
@@ -111,6 +140,22 @@ body {
 .tree-node.selected {
   background: #1f6feb; /* GitHub Dark: accent.emphasis or similar selection */
   color: #ffffff;
+}
+
+.tree-node.search-match {
+  background-color: rgba(255, 255, 0, 0.15);
+  border-left: 2px solid #f59e0b;
+}
+
+.tree-node.search-current {
+  background-color: #f59e0b !important;
+  color: white !important;
+}
+
+.tree-node.search-current .name,
+.tree-node.search-current .node-icon,
+.tree-node.search-current .toggle {
+  color: white !important;
 }
 .tree-node.selected .name,
 .tree-node.selected .node-icon,
@@ -262,4 +307,71 @@ body {
 .enum-select option {
   background: #161b22;
   color: #c9d1d9;
+}
+
+/* 节点引用样式 */
+.node-ref-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.node-ref-box {
+  display: flex;
+  align-items: stretch;
+  background: #2d2d2d;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #333;
+  height: 24px;
+  cursor: pointer;
+}
+
+.node-ref-box:hover {
+  border-color: #58a6ff;
+}
+
+.node-ref-type {
+  background: #4a90e2;
+  color: white;
+  padding: 0 6px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.node-ref-type-icon {
+  font-size: 10px;
+}
+
+.node-ref-name {
+  flex: 1;
+  background: #e67e22;
+  color: white;
+  padding: 0 8px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.node-ref-icon {
+  margin-right: 4px;
+  font-size: 12px;
+  filter: brightness(1.2);
+}
+
+.node-ref-null {
+  flex: 1;
+  background: #333;
+  color: #888;
+  padding: 0 8px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
 }

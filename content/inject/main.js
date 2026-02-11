@@ -96,12 +96,17 @@
             const node = utils.getNodeByUuid(scene, e.data.uuid);
             const props = nodeProps.getProps(node);
             window.postMessage({ source: 'cc-inspector-inject', type: 'props', props: props }, '*');
+            
+            // 选中节点时同时高亮显示
+            if (node && nodeHighlight) {
+              nodeHighlight.highlightNode(e.data.uuid);
+            }
             break;
           }
           
           case 'setProp': {
             const node = utils.getNodeByUuid(scene, e.data.uuid);
-            if (node) {
+            if (node && nodeProps) {
               nodeProps.setProp(node, e.data.comp, e.data.prop, e.data.value);
             }
             break;
@@ -109,7 +114,7 @@
           
           case 'setVec': {
             const node = utils.getNodeByUuid(scene, e.data.uuid);
-            if (node) {
+            if (node && nodeProps) {
               nodeProps.setVec(node, e.data.comp, e.data.prop, e.data.value);
             }
             break;
@@ -117,7 +122,7 @@
           
           case 'setSize': {
             const node = utils.getNodeByUuid(scene, e.data.uuid);
-            if (node) {
+            if (node && nodeProps) {
               nodeProps.setSize(node, e.data.comp, e.data.prop, e.data.value);
             }
             break;
@@ -125,9 +130,19 @@
           
           case 'setColor': {
             const node = utils.getNodeByUuid(scene, e.data.uuid);
-            if (node) {
+            if (node && nodeProps) {
               nodeProps.setColor(node, e.data.comp, e.data.prop, e.data.value);
             }
+            break;
+          }
+
+          case 'highlightNode': {
+            if (nodeHighlight) nodeHighlight.highlightNode(e.data.uuid);
+            break;
+          }
+
+          case 'clearHighlight': {
+            if (nodeHighlight) nodeHighlight.clearHighlight();
             break;
           }
         }

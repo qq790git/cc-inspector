@@ -2,6 +2,10 @@ let selectedNode = null;
 let lastTreeJson = '';
 let lastPropsJson = '';
 let expandedNodes = new Set();
+let treeData = null;
+let searchResults = [];
+let currentSearchIndex = -1;
+
 const port = chrome.runtime.connect({ name: 'panel' });
 
 port.onMessage.addListener(msg => {
@@ -9,10 +13,17 @@ port.onMessage.addListener(msg => {
     const json = JSON.stringify(msg.data);
     if (json !== lastTreeJson) {
       lastTreeJson = json;
+      treeData = msg.data;
       renderTree(msg.data);
       // 更新节点数量显示
       const count = countNodes(msg.data);
       document.getElementById('nodeCount').textContent = `(${count}个节点)`;
+      
+      // 如果有搜索内容，重新应用搜索
+      const searchTerm = document.getElementById('searchInput').value;
+      if (searchTerm) {
+        performSearch(searchTerm, false);
+      }
     }
   } else if (msg.type === 'props') {
     const json = JSON.stringify(msg.data);
@@ -65,7 +76,8 @@ const nodeTypeIcons = {
   camera: '📷',
   light: '💡',
   animation: '🎬',
-  canvas: '🖥️'
+  canvas: '🖥️',
+  asset: '📄'
 };
 
 function getNodeIcon(nodeType) {
@@ -89,7 +101,7 @@ function renderTree(nodes) {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedNodes.has(node.uuid);
     const icon = getNodeIcon(node.nodeType);
-    div.innerHTML = `<span class="toggle">${hasChildren ? (isExpanded ? '▼' : '▶') : '  '}</span><span class="node-icon">${icon}</span><span class="name">${node.name}</span>`;
+    div.innerHTML = `<span class="toggle">${hasChildren ? (isExpanded ? '▼' : '▶') : '  '}</span><span class="node-icon">${icon}</span><span class="name">${escapeHtml(node.name)}</span>`;
     
     if (node.uuid === selectedNode) div.classList.add('selected');
     
@@ -119,6 +131,14 @@ function renderTree(nodes) {
         selectedNode = node.uuid;
         port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: node.uuid });
       }
+    };
+
+    div.onmouseenter = () => {
+      port.postMessage({ type: 'highlightNode', tabId: chrome.devtools.inspectedWindow.tabId, uuid: node.uuid });
+    };
+
+    div.onmouseleave = () => {
+      port.postMessage({ type: 'clearHighlight', tabId: chrome.devtools.inspectedWindow.tabId });
     };
     
     return wrapper;
@@ -208,6 +228,22 @@ function renderProps(props) {
         checkbox.onchange = () => {
           port.postMessage({ type: 'setProp', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode, comp: comp.name, prop: p.name, value: checkbox.checked ? 'true' : 'false' });
         };
+      } else if (p.type === 'node-ref') {
+        const isNull = !p.uuid && !p.value;
+        const typeIcon = isNull ? '📦' : getNodeIcon(p.nodeType);
+        const canJump = p.uuid && p.nodeType !== 'asset';
+        
+        row.innerHTML = `<span class="prop-name">${p.name}</span><span class="prop-value">
+          <div class="node-ref-box" title="${canJump ? '点击在节点树中定位' : (isNull ? 'null' : '')}">
+            <div class="node-ref-type"><span class="node-ref-type-icon">${typeIcon}</span>${escapeHtml(p.targetType || 'cc.Node')}</div>
+            ${isNull ? '<div class="node-ref-null">null</div>' : `<div class="node-ref-name">${escapeHtml(p.value)}</div>`}
+          </div>
+        </span>`;
+        if (canJump) {
+          row.querySelector('.node-ref-box').onclick = () => {
+            navigateToSearchResultByUuid(p.uuid);
+          };
+        }
       } else if (p.editable) {
         row.innerHTML = `<span class="prop-name">${p.name}</span><span class="prop-value"><input type="text" value="${escapeHtml(formatValue(p.value))}"></span>`;
         const input = row.querySelector('input');
@@ -234,15 +270,139 @@ function formatValue(v) {
   return String(v);
 }
 
+// 搜索功能实现
+document.getElementById('searchInput').oninput = (e) => {
+  performSearch(e.target.value, true);
+};
+
+document.getElementById('searchInput').onkeydown = (e) => {
+  if (e.key === 'Enter') {
+    if (searchResults.length > 0) {
+      currentSearchIndex = (currentSearchIndex + 1) % searchResults.length;
+      navigateToSearchResult(currentSearchIndex);
+    }
+  }
+};
+
+function performSearch(term, shouldScroll) {
+  const countSpan = document.getElementById('searchCount');
+  if (!term) {
+    countSpan.textContent = '';
+    searchResults = [];
+    currentSearchIndex = -1;
+    document.querySelectorAll('.tree-node.search-match').forEach(n => n.classList.remove('search-match'));
+    document.querySelectorAll('.tree-node.search-current').forEach(n => n.classList.remove('search-current'));
+    return;
+  }
+
+  term = term.toLowerCase();
+  searchResults = [];
+  
+  // 递归查找匹配节点
+  function findMatches(nodes) {
+    nodes.forEach(node => {
+      if (node.name.toLowerCase().includes(term)) {
+        searchResults.push(node.uuid);
+      }
+      if (node.children) findMatches(node.children);
+    });
+  }
+  
+  if (treeData) findMatches(treeData);
+  
+  countSpan.textContent = searchResults.length > 0 ? `${searchResults.length} 个结果` : '无结果';
+  
+  // 高亮所有匹配项
+  document.querySelectorAll('.tree-node.search-match').forEach(n => n.classList.remove('search-match'));
+  document.querySelectorAll('.tree-node.search-current').forEach(n => n.classList.remove('search-current'));
+  
+  searchResults.forEach(uuid => {
+    const el = document.querySelector(`.tree-node[data-uuid="${uuid}"]`);
+    if (el) el.classList.add('search-match');
+  });
+
+  if (shouldScroll && searchResults.length > 0) {
+    currentSearchIndex = 0;
+    navigateToSearchResult(0);
+  }
+}
+
+function navigateToSearchResultByUuid(uuid) {
+  if (!uuid) return;
+
+  // 展开所有父节点
+  expandToNode(uuid);
+  
+  // 重新渲染树
+  renderTree(treeData);
+  
+  // 滚动到目标并选中
+  const targetEl = document.querySelector(`.tree-node[data-uuid="${uuid}"]`);
+  if (targetEl) {
+    document.querySelectorAll('.tree-node.selected').forEach(n => n.classList.remove('selected'));
+    targetEl.classList.add('selected');
+    selectedNode = uuid;
+    targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    
+    // 获取属性
+    port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: uuid });
+    
+    // 触发高亮
+    port.postMessage({ type: 'highlightNode', tabId: chrome.devtools.inspectedWindow.tabId, uuid: uuid });
+  }
+}
+
+function navigateToSearchResult(index) {
+  const uuid = searchResults[index];
+  navigateToSearchResultByUuid(uuid);
+  
+  // 重新应用搜索高亮
+  searchResults.forEach(u => {
+    const el = document.querySelector(`.tree-node[data-uuid="${u}"]`);
+    if (el) el.classList.add('search-match');
+  });
+
+  const targetEl = document.querySelector(`.tree-node[data-uuid="${uuid}"]`);
+  if (targetEl) {
+    targetEl.classList.add('search-current');
+    // 更新搜索计数显示
+    document.getElementById('searchCount').textContent = `${index + 1} / ${searchResults.length}`;
+  }
+}
+
+function expandToNode(uuid) {
+  function findPath(nodes, targetUuid, path) {
+    for (const node of nodes) {
+      if (node.uuid === targetUuid) return true;
+      if (node.children) {
+        path.add(node.uuid);
+        if (findPath(node.children, targetUuid, path)) return true;
+        path.delete(node.uuid);
+      }
+    }
+    return false;
+  }
+
+  const path = new Set();
+  if (treeData) {
+    findPath(treeData, uuid, path);
+    path.forEach(id => expandedNodes.add(id));
+  }
+}
+
 // 初始刷新
 setTimeout(() => {
-  port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
+  if (chrome.devtools && chrome.devtools.inspectedWindow) {
+    port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
+  }
 }, 500);
 
 // 自动刷新 - 1000ms间隔 (降低轮询频率，依靠主动推送)
 setInterval(() => {
-  port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
-  if (selectedNode) {
-    port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode });
+  if (chrome.devtools && chrome.devtools.inspectedWindow && chrome.devtools.inspectedWindow.tabId) {
+    port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
+    if (selectedNode) {
+      port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode });
+    }
   }
 }, 1000);

@@ -9,6 +9,10 @@ chrome.runtime.onConnect.addListener(port => {
 
       if (msg.type === 'refresh') {
         chrome.tabs.sendMessage(msg.tabId, { type: 'getTree' }, response => {
+          if (chrome.runtime.lastError) {
+            port.postMessage({ type: 'status', data: '未检测到Cocos Creator (等待中...)' });
+            return;
+          }
           if (response && response.tree) {
             port.postMessage({ type: 'tree', data: response.tree });
             port.postMessage({ type: 'status', data: 'Cocos Creator ' + (response.version || '') });
@@ -18,11 +22,12 @@ chrome.runtime.onConnect.addListener(port => {
         });
       } else if (msg.type === 'getProps') {
         chrome.tabs.sendMessage(msg.tabId, { type: 'getProps', uuid: msg.uuid }, response => {
+          if (chrome.runtime.lastError) return;
           if (response && response.props) {
             port.postMessage({ type: 'props', data: response.props });
           }
         });
-      } else if (msg.type === 'setProp' || msg.type === 'setVec' || msg.type === 'setSize' || msg.type === 'setColor') {
+      } else if (msg.type === 'setProp' || msg.type === 'setVec' || msg.type === 'setSize' || msg.type === 'setColor' || msg.type === 'highlightNode' || msg.type === 'clearHighlight') {
         chrome.tabs.sendMessage(msg.tabId, msg);
       }
     });
@@ -47,6 +52,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
         port.postMessage({ type: 'status', data: 'Cocos Creator ' + (msg.version || '') });
         // 检测到 Cocos 后自动请求一次树
         chrome.tabs.sendMessage(sender.tab.id, { type: 'getTree' }, response => {
+          if (chrome.runtime.lastError) return;
           if (response && response.tree) {
             port.postMessage({ type: 'tree', data: response.tree });
           }
