@@ -6,35 +6,66 @@ let treeData = null;
 let searchResults = [];
 let currentSearchIndex = -1;
 
-const port = chrome.runtime.connect({ name: 'panel' });
+let port = null;
+let isPortDisconnected = false;
 
-port.onMessage.addListener(msg => {
-  if (msg.type === 'tree') {
-    const json = JSON.stringify(msg.data);
-    if (json !== lastTreeJson) {
-      lastTreeJson = json;
-      treeData = msg.data;
-      renderTree(msg.data);
-      // 更新节点数量显示
-      const count = countNodes(msg.data);
-      document.getElementById('nodeCount').textContent = `(${count}个节点)`;
-      
-      // 如果有搜索内容，重新应用搜索
-      const searchTerm = document.getElementById('searchInput').value;
-      if (searchTerm) {
-        performSearch(searchTerm, false);
+function connectPort() {
+  try {
+    port = chrome.runtime.connect({ name: 'panel' });
+    isPortDisconnected = false;
+    
+    port.onMessage.addListener(msg => {
+      if (msg.type === 'tree') {
+        const json = JSON.stringify(msg.data);
+        if (json !== lastTreeJson) {
+          lastTreeJson = json;
+          treeData = msg.data;
+          renderTree(msg.data);
+          // 更新节点数量显示
+          const count = countNodes(msg.data);
+          document.getElementById('nodeCount').textContent = `(${count}个节点)`;
+          
+          // 如果有搜索内容，重新应用搜索
+          const searchTerm = document.getElementById('searchInput').value;
+          if (searchTerm) {
+            performSearch(searchTerm, false);
+          }
+        }
+      } else if (msg.type === 'props') {
+        const json = JSON.stringify(msg.data);
+        if (json !== lastPropsJson) {
+          lastPropsJson = json;
+          renderProps(msg.data);
+        }
+      } else if (msg.type === 'status') {
+        document.getElementById('status').textContent = msg.data;
       }
-    }
-  } else if (msg.type === 'props') {
-    const json = JSON.stringify(msg.data);
-    if (json !== lastPropsJson) {
-      lastPropsJson = json;
-      renderProps(msg.data);
-    }
-  } else if (msg.type === 'status') {
-    document.getElementById('status').textContent = msg.data;
+    });
+
+    port.onDisconnect.addListener(() => {
+      isPortDisconnected = true;
+      console.log('Port disconnected, attempting to reconnect...');
+      setTimeout(connectPort, 1000);
+    });
+  } catch (e) {
+    console.error('Failed to connect port:', e);
+    setTimeout(connectPort, 1000);
   }
-});
+}
+
+connectPort();
+
+function safePostMessage(message) {
+  if (port && !isPortDisconnected) {
+    try {
+      port.postMessage(message);
+    } catch (e) {
+      console.error('Error posting message:', e);
+      isPortDisconnected = true;
+    }
+  }
+}
+
 
 function countNodes(nodes) {
   if (!nodes) return 0;
@@ -49,7 +80,7 @@ function countNodes(nodes) {
 document.getElementById('refreshBtn').onclick = () => {
   lastTreeJson = '';
   lastPropsJson = '';
-  port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
+  safePostMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
 };
 
 // 节点类型对应的图标
@@ -345,10 +376,10 @@ function navigateToSearchResultByUuid(uuid) {
     targetEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
     
     // 获取属性
-    port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: uuid });
+    safePostMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: uuid });
     
     // 触发高亮
-    port.postMessage({ type: 'highlightNode', tabId: chrome.devtools.inspectedWindow.tabId, uuid: uuid });
+    safePostMessage({ type: 'highlightNode', tabId: chrome.devtools.inspectedWindow.tabId, uuid: uuid });
   }
 }
 
@@ -393,16 +424,16 @@ function expandToNode(uuid) {
 // 初始刷新
 setTimeout(() => {
   if (chrome.devtools && chrome.devtools.inspectedWindow) {
-    port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
+    safePostMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
   }
 }, 500);
 
 // 自动刷新 - 1000ms间隔 (降低轮询频率，依靠主动推送)
 setInterval(() => {
   if (chrome.devtools && chrome.devtools.inspectedWindow && chrome.devtools.inspectedWindow.tabId) {
-    port.postMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
+    safePostMessage({ type: 'refresh', tabId: chrome.devtools.inspectedWindow.tabId });
     if (selectedNode) {
-      port.postMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode });
+      safePostMessage({ type: 'getProps', tabId: chrome.devtools.inspectedWindow.tabId, uuid: selectedNode });
     }
   }
 }, 1000);
